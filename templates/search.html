@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Buscar Folio</title>
+    <style>
+        body {
+            background-color: white;
+            color: purple;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 400px;
+        }
+        .button {
+            background-color: #6B4F2D;
+            color: white;
+        }
+        .button:hover {
+            background-color: #4E3629;
+        }
+        .logout-button {
+            background-color: #C44E4E;
+            color: white;
+            margin-top: 20px;
+        }
+        .logout-button:hover {
+            background-color: #9D3939;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold mb-4">Buscar Folio</h1>
+        <form action="/search" method="POST">
+            <label for="folio" class="block text-lg font-semibold mb-2">Folio:</label>
+            <select name="folio" required class="w-full p-2 border rounded mb-4">
+                <option value="">Selecciona un folio</option>
+                {% for folio in folios %}
+                    <option value="{{ folio }}">{{ folio }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="button px-4 py-2 rounded">Buscar</button>
+        </form>
+
+        {% if error %}
+            <p class="text-red-500 mt-4">{{ error }}</p>
+        {% endif %}
+
+        <!-- Botón de Cerrar Sesión -->
+        <form action="/logout" method="POST">
+            <button type="submit" class="logout-button px-4 py-2 rounded">Cerrar Sesión</button>
+        </form>
+    </div>
+</body>
+</html>
+

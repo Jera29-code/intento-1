@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Consultar Registros</title>
+    <style>
+        body {
+            background-color: white;
+            color: purple;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+        .button {
+            background-color: #6B4F2D;
+            color: white;
+        }
+        .button:hover {
+            background-color: #4E3629;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Registros Guardados</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Número de Envío</th>
+                    <th>Entregada</th>
+                    <th>Participación</th>
+                    <th>Causal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for registro in registros %}
+                <tr>
+                    <td>{{ registro.numero_envio }}</td>
+                    <td>{{ registro.entregada }}</td>
+                    <td>{{ registro.participacion }}</td>
+                    <td>{{ registro.causal }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <br>
+        <a href="/descargar_excel" class="button">Descargar Excel</a>
+    </div>
+</body>
+</html>

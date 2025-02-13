@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ver Registros</title>
+    <style>
+        body {
+            background-color: white;
+            color: purple;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: purple;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #6B4F2D;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        button {
+            background-color: #6B4F2D;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #4E3629;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Registros Enviados</h1>
+        
+        {% if records %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Folio SIILNEVA</th>
+                        <th>Id Entidad</th>
+                        <th>Entidad</th>
+                        <th>Id Distrito Electoral Federal</th>
+                        <th>Cabecera D.E.F</th>
+                        <th>Número de Visita</th>
+                        <th>¿Se Recopiló SIILNEVA?</th>
+                        <th>¿Manifestó Interés en Votar?</th>
+                        <th>Causal SIILNEVA</th>
+                        <th>Fecha de Entrega</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                        <tr>
+                            <td>{{ record['Folio SIILNEVA'] }}</td>
+                            <td>{{ record['Id_Entidad'] }}</td>
+                            <td>{{ record['Entidad'] }}</td>
+                            <td>{{ record['Id_Distrito Electoral Federal'] }}</td>
+                            <td>{{ record['Cabecera D.E.F'] }}</td>
+                            <td>{{ record['Número_de_visita'] }}</td>
+                            <td>{{ record['¿Se_recopiló_SIILNEVA?'] }}</td>
+                            <td>{{ record['¿Manifestó_estar_interesado_en_votar?'] }}</td>
+                            <td>{{ record['Causal'] }}</td>
+                            <td>{{ record['Fecha de Entrega'] }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No hay registros disponibles.</p>
+        {% endif %}
+        
+        <div>
+            <form action="{{ url_for('search') }}" method="get" style="display:inline;">
+                <button type="submit">Regresar</button>
+            </form>
+
+            <form action="{{ url_for('descargar_csv') }}" method="get" style="display:inline;">
+                <button type="submit">Descargar CSV</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+

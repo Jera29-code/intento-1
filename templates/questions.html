@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Formulario</title>
+    <style>
+        body {
+            background-color: white;
+            color: purple;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
+        }
+        .button {
+            background-color: #6B4F2D;
+            color: white;
+        }
+        .button:hover {
+            background-color: #4E3629;
+        }
+    </style>
+    <script>
+        // Mostrar u ocultar las secciones dependiendo de las respuestas seleccionadas
+        function toggleSIILNEVA() {
+            var recopilado = document.querySelector('select[name="siilneva"]').value;
+            var causalDiv = document.getElementById("causalDiv");
+            var interesDiv = document.getElementById("interesDiv");
+
+            if (recopilado === "No") {
+                causalDiv.style.display = "block"; // Mostrar la causal si no se recopiló SIILNEVA
+                interesDiv.style.display = "none"; // Ocultar la pregunta de interés en votar
+            } else {
+                causalDiv.style.display = "none"; // Ocultar la causal si se recopiló SIILNEVA
+                interesDiv.style.display = "block"; // Mostrar la pregunta de interés en votar
+            }
+        }
+
+        function toggleInteres() {
+            var interes = document.querySelector('select[name="interes_voto"]').value;
+            var causalInteresDiv = document.getElementById("causalInteresDiv");
+            
+            if (interes === "No") {
+                causalInteresDiv.style.display = "block"; // Mostrar causal si no está interesado en votar
+            } else {
+                causalInteresDiv.style.display = "none"; // Ocultar causal si está interesado en votar
+            }
+        }
+
+        window.onload = function() {
+            toggleSIILNEVA();  // Asegurarse de que las visibilidades se establezcan al cargar
+            toggleInteres();   // Asegurarse de que las visibilidades se establezcan al cargar
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold mb-4">Formulario</h1>
+        <form action="/questions/{{ folio }}" method="post">
+            <input type="hidden" name="folio" value="{{ folio }}">
+
+  <!-- ¿Se recopiló SIILNEVA? -->
+            <label>¿Se recopiló SIILNEVA?</label>
+            <select name="siilneva" onchange="toggleSIILNEVA()" required>
+                <option value="Si">Sí</option>
+                <option value="No">No</option>
+            </select><br><br>
+
+            <!-- ¿En que visita se recopilo la SILNEVA?  -->
+            <label for="numero_visita">Número de Visita:</label>
+            <select name="numero_visita" required>
+                <option value="Primera visita">Primera visita</option>
+                <option value="Segunda visita">Segunda visita</option>
+                <option value="Tercera visita">Tercera visita</option>
+                <option value="Cuarta visita">Cuarta visita</option>
+                <option value="Quinta visita">Quinta visita</option>
+            </select><br><br>
+
+          
+
+            <!-- Causal si no se recopiló SIILNEVA -->
+            <div id="causalDiv" style="display:none;">
+                <label>Causal:</label>
+                <select name="causal_siilneva">
+                    <option value="No se encontró a la ciudadana o ciudadano">No se encontró a la ciudadana o ciudadano</option>
+                    <option value="No está en condiciones de ejercer su voto">No está en condiciones de ejercer su voto</option>
+                    <option value="Nadie atiende en el domicilio">Nadie atiende en el domicilio</option>
+                    <option value="Cambio de domicilio">Cambio de domicilio</option>
+                    <option value="Vivienda deshabitada">Vivienda deshabitada</option>
+                    <option value="Falleció">Falleció</option>
+                </select><br><br>
+            </div>
+
+            <!-- Sección de "¿Manifestó estar interesado en votar?" solo visible si SIILNEVA es "Sí" -->
+            <div id="interesDiv" style="display:none;">
+                <label>¿Manifestó estar interesado en votar?</label>
+                <select name="interes_voto" onchange="toggleInteres()" required>
+                    <option value="Si">Sí</option>
+                    <option value="No">No</option>
+                </select><br><br>
+
+                <!-- Causal si no está interesado en votar -->
+                <div id="causalInteresDiv" style="display:none;">
+                    <label>Causal:</label>
+                    <select name="causal_interes">
+                         <option value="No desea participar">No desea participar</option>
+                       </select><br><br>
+                </div>
+            </div>
+
+            <!-- Fecha de entrega -->
+            <label for="fecha_entrega">Fecha de Entrega:</label>
+            <input type="date" name="fecha_entrega" min="2025-02-15" max="2025-02-21" required><br><br>
+
+            <button type="submit" class="button px-4 py-2 rounded">Guardar</button>
+        </form>
+    </div>
+</body>
+</html>
