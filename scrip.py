@@ -1,62 +1,74 @@
-
-from flask import Flask, render_template, request, redirect, url_for, session, make_response
-import pandas as pd
-from io import BytesIO
 import os
+from flask import Flask, render_template, request, redirect, url_for, session, send_file
+import pandas as pd
 from datetime import datetime
 import requests
+from io import BytesIO
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # Para sesiones seguras
+app.secret_key = os.urandom(24)
 
-# URL de descarga directa del archivo con los usuarios y contraseñas
-dropbox_url_usuarios = "https://www.dropbox.com/scl/fi/0yh46fj1wkvy96fyuupog/lista-de-usuarios.xlsx?rlkey=pihdtj5gxf2k5p022l8x2rtol&dl=1"
-# URL de descarga directa de la base de datos
-dropbox_url_base = "https://www.dropbox.com/scl/fi/zbxqemymj0wdtwib4eg8o/Archivo_SIILNEVA_Recopiladas.xlsx?rlkey=h879uzv57i3evv651owf4xuku&dl=1"
+dropbox_url_usuarios = "https://www.dropbox.com/scl/fi/ir9gxg87lgd5szujpz7z3/lista-de-usuarios-nacional.xlsx?rlkey=htg0izh11vu2w6oib6l9fv45h&st=641g0w53&dl=1"
+dropbox_url_base = "https://www.dropbox.com/scl/fi/fcg3lxj7smpdswr2hur0i/Parte-2-nacional.xlsx?rlkey=qmg0fz7xjmt9jwjx35maon6zl&st=wtxegeyg&dl=1"
 
-# Cargar datos desde Dropbox y verificar si es un archivo Excel
 def download_excel_from_dropbox(url):
     try:
         response = requests.get(url)
         if response.status_code == 200:
             file_content = response.content
-            if file_content[:4] == b'PK\x03\x04':  # Verificar encabezado ZIP para archivos XLSX
+            if file_content[:4] == b'PK\x03\x04':
                 file_stream = BytesIO(file_content)
                 data = pd.read_excel(file_stream, engine='openpyxl')
-                print("Archivo descargado y cargado exitosamente desde Dropbox.")
                 return data
-            else:
-                print("El archivo descargado no es un archivo de Excel válido.")
-                return None
-        else:
-            print(f"Error al descargar el archivo: {response.status_code}")
-            return None
+        return None
     except Exception as e:
         print(f"Error al descargar el archivo: {e}")
         return None
 
-# Cargar datos de usuarios y contraseñas desde el archivo Excel
 def download_users_from_dropbox():
-    try:
-        return download_excel_from_dropbox(dropbox_url_usuarios)
-    except Exception as e:
-        print(f"Error al descargar la lista de usuarios: {e}")
-        return None
+    return download_excel_from_dropbox(dropbox_url_usuarios)
 
-# Cargar datos de la base de datos desde Dropbox
 def download_data_from_dropbox():
-    try:
-        return download_excel_from_dropbox(dropbox_url_base)
-    except Exception as e:
-        print(f"Error al descargar el archivo de base de datos: {e}")
-        return None
+    return download_excel_from_dropbox(dropbox_url_base)
 
-# Cargar los datos
 users_data = download_users_from_dropbox()
 data = download_data_from_dropbox()
-
-# Lista para almacenar los registros enviados (simulando base de datos en memoria)
 sent_records = []
+
+save_path = r"C:\Users\jeraldi.rosas\OneDrive - Instituto Nacional Electoral\Escritorio\ruta nacional"
+
+def load_processed_folios():
+    try:
+        with open('processed_folios.txt', 'r') as f:
+            return [line.strip() for line in f.readlines()]
+    except FileNotFoundError:
+        return []
+
+def save_processed_folios(processed_folios):
+    with open('processed_folios.txt', 'w') as f:
+        for folio in processed_folios:
+            f.write(folio + '\n')
+
+processed_folios = load_processed_folios()
+
+def load_saved_records():
+    try:
+        file_path = os.path.join(save_path, 'registros_guardados.xlsx')
+        if os.path.exists(file_path):
+            df = pd.read_excel(file_path, engine='openpyxl')
+            return df.to_dict(orient='records')
+        return []
+    except Exception as e:
+        print(f"Error al cargar los registros guardados: {e}")
+        return []
+
+sent_records = load_saved_records()
+
+usuarios_pel = [
+    "DUR1", "DUR2", "DUR3", "DUR4", 
+       "VER1", "VER2", "VER3", "VER4", "VER5", "VER6", "VER7", "VER8", "VER9", "VER10", "VER11", "VER12", 
+    "VER13", "VER14", "VER15", "VER16", "VER17", "VER18", "VER19"
+]
 
 @app.route('/')
 def index():
@@ -66,32 +78,36 @@ def index():
 def login():
     usuario = request.form['usuario']
     contrasena = request.form['contrasena']
-
-    # Buscar el usuario y la contraseña en el DataFrame
     user_row = users_data.loc[(users_data['Usuario'] == usuario) & (users_data['Contraseña'] == contrasena)]
 
     if not user_row.empty:
-        # Guardar el usuario en la sesión para verificar más tarde
         session['usuario'] = usuario
-        # Filtrar los folios que pertenecen a ese usuario
         user_folios = data[data['USUARIO'] == usuario]
         session['user_folios'] = user_folios['Folio SIILNEVA'].tolist()
+
+        if usuario.endswith('JL'):
+            return redirect(url_for('registros_pva'))
+
         return redirect(url_for('search'))
     else:
         return render_template('index.html', error="Usuario o contraseña incorrectos.")
+
+@app.route('/registros_pva')
+def registros_pva():
+    return render_template('registros_pva.html')
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
     if 'usuario' not in session:
         return redirect(url_for('index'))
 
-    # Obtener los folios disponibles para el usuario
     user_folios = session.get('user_folios', [])
+    available_folios = [folio for folio in user_folios if folio not in processed_folios]
+    processed_user_folios = [folio for folio in processed_folios if folio in user_folios]
 
     if request.method == 'POST':
         folio = request.form['folio']
-        
-        if folio in user_folios:
+        if folio in available_folios:
             row = data.loc[data['Folio SIILNEVA'] == folio].iloc[0]
             result = {
                 'Folio': folio,
@@ -101,18 +117,18 @@ def search():
                 'Id_Distrito Electoral Federal': row['Id_Distrito Electoral Federal'],
                 'Cabecera D.E.F': row['Cabecera D.E.F'],
             }
-            return render_template('questions.html', result=result, folio=folio)
-        else:
-            return render_template('search.html', error="Folio no encontrado o no permitido para tu usuario.")
+            if session['usuario'] in usuarios_pel:
+                return render_template('questions_pel.html', result=result, folio=folio)
+            else:
+                return render_template('questions.html', result=result, folio=folio)
 
-    return render_template('search.html', folios=user_folios)
+    return render_template('search.html', folios=available_folios, processed_user_folios=processed_user_folios)
 
 @app.route('/questions/<folio>', methods=['GET', 'POST'])
 def questions(folio):
     if 'usuario' not in session:
         return redirect(url_for('index'))
 
-    # Buscar el folio en la base de datos
     row = data.loc[data['Folio SIILNEVA'] == folio]
     if row.empty:
         return render_template('search.html', error="Folio no encontrado.")
@@ -126,101 +142,102 @@ def questions(folio):
         'Cabecera D.E.F': row['Cabecera D.E.F'].iloc[0],
     }
 
-    # Si el método es POST, procesamos los datos del formulario
     if request.method == 'POST':
-        número_de_visita = request.form['numero_visita']
-        siilneva = request.form['siilneva']  # Esta es la respuesta a SIILNEVA
-        causal = request.form['causal_siilneva'] if siilneva == 'No' else None
-        interes_voto = request.form['interes_voto']  # Respuesta sobre el interés en votar
-        causal_interes = request.form['causal_interes'] if interes_voto == 'No' else None
+        siilneva = request.form['siilneva']
+        numero_visita = request.form['numero_visita']
         fecha_entrega = request.form['fecha_entrega']
+        tipo_eleccion = request.form.get('tipo_eleccion') if session['usuario'] in usuarios_pel else None
+        causal_siilneva = request.form['causal_siilneva'] if siilneva == 'No' else None
 
-        # Si "¿Se_recopiló_SIILNEVA?" es "No", vaciar el campo de "¿Manifestó_estar_interesado_en_votar?"
-        if siilneva == 'No':
-            interes_voto = ''
+        if folio not in processed_folios:
+            processed_folios.append(folio)
 
-        # Obtener los datos adicionales del folio
-        additional_data = {
-            'Id_Entidad': row['Id_Entidad'].iloc[0],
-            'Entidad': row['Entidad'].iloc[0],
-            'Id_Distrito Electoral Federal': row['Id_Distrito Electoral Federal'].iloc[0],
-            'Cabecera D.E.F': row['Cabecera D.E.F'].iloc[0]
-        }
+        if siilneva and numero_visita and fecha_entrega:
+            record = {
+                'Folio SIILNEVA': folio,
+                'Id_Entidad': int(row['Id_Entidad'].iloc[0]),
+                'Entidad': row['Entidad'].iloc[0],
+                'Id_Distrito Electoral Federal': int(row['Id_Distrito Electoral Federal'].iloc[0]),
+                'Cabecera D.E.F': int(row['Cabecera D.E.F'].iloc[0]),
+                '¿Se recopiló voto?': siilneva,
+                'Número de Visita': numero_visita,
+                'Fecha de Entrega': fecha_entrega,
+                'Causal_SIILNEVA': causal_siilneva,
+            }
 
-        # Almacenar los registros en la lista "sent_records"
-        sent_records.append({
-            'Folio SIILNEVA': folio,
-            'Número_de_visita': número_de_visita,
-            '¿Se_recopiló_SIILNEVA?': siilneva,
-            '¿Manifestó_estar_interesado_en_votar?': interes_voto,
-            'Causal': causal if causal else causal_interes,
-            'Fecha de Entrega': fecha_entrega,
-            'Id_Entidad': additional_data['Id_Entidad'],
-            'Entidad': additional_data['Entidad'],
-            'Id_Distrito Electoral Federal': additional_data['Id_Distrito Electoral Federal'],
-            'Cabecera D.E.F': additional_data['Cabecera D.E.F'],
-        })
+            if tipo_eleccion:
+                record['Tipo de Elección'] = tipo_eleccion
 
-        # Generar archivo Excel con los datos adicionales
-        # Obtener la fecha actual para el nombre del archivo
-        fecha_actual = datetime.now().strftime("%Y-%m-%d")
-        nombre_archivo = f"SEGUIMIENTO_VA_{fecha_actual}.xlsx"
+            sent_records.append(record)
+            save_to_excel()
+            save_processed_folios(processed_folios)
 
-        # Especificar la ruta de guardado
-        export_path = os.path.join(r"C:\Users\jeraldi.rosas\OneDrive - Instituto Nacional Electoral\Escritorio\seguimiento VA IN", nombre_archivo)
-        
-        # Convertir los registros a un DataFrame con las columnas en el orden solicitado
-        export_data = pd.DataFrame(sent_records, columns=[  
-            'Folio SIILNEVA', 'Id_Entidad', 'Entidad', 'Id_Distrito Electoral Federal', 'Cabecera D.E.F',
-            '¿Se_recopiló_SIILNEVA?', 'Número_de_visita','¿Manifestó_estar_interesado_en_votar?', 'Causal', 'Fecha de Entrega'
-        ])
-        
-        # Guardar el archivo Excel
-        export_data.to_excel(export_path, index=False)
-        
-        return render_template('save.html', folio=folio)
+            return render_template('save.html', folio=folio)
+        else:
+            return render_template('questions.html', result=result, error="Todos los campos son obligatorios.")
 
-    return render_template('questions.html', result=result, folio=folio)
+    return render_template('questions.html', result=result)
+
+def save_to_excel():
+    df = pd.DataFrame(sent_records)
+    file_path = os.path.join(save_path, 'registros_guardados.xlsx')
+    df.to_excel(file_path, index=False)
+
+@app.route('/logout')
+def logout():
+    session.pop('usuario', None)
+    session.pop('user_folios', None)
+    return redirect(url_for('index'))
 
 @app.route('/view_records')
 def view_records():
     if 'usuario' not in session:
         return redirect(url_for('index'))
 
-    # Obtener los registros enviados por el usuario
-    user_folios = session.get('user_folios', [])
-    
-    # Filtrar los registros enviados por el folio del usuario
-    user_sent_records = [record for record in sent_records if record['Folio SIILNEVA'] in user_folios]
-    
-    return render_template('view_records.html', records=user_sent_records)
+    usuario = session['usuario']
+    user_records = [record for record in sent_records if record['Folio SIILNEVA'] in session.get('user_folios', [])]
+    df = pd.DataFrame(user_records) if user_records else pd.DataFrame()
+    has_records = len(user_records) > 0
 
-@app.route('/descargar_csv')
-def descargar_csv():
+    return render_template('view_records.html', records=df, has_records=has_records)
+
+@app.route('/download_excel')
+def download_excel():
     if 'usuario' not in session:
         return redirect(url_for('index'))
 
-    user_folios = session.get('user_folios', [])
-    user_sent_records = [record for record in sent_records if record['Folio SIILNEVA'] in user_folios]
-    
-    # Convertir los registros a un DataFrame
-    df = pd.DataFrame(user_sent_records)
-    
-    # Convertir el DataFrame a CSV
-    csv = df.to_csv(index=False)
-    
-    # Crear un archivo CSV para descargar
-    response = make_response(csv)
-    response.headers["Content-Disposition"] = "attachment; filename=registros.csv"
-    response.headers["Content-Type"] = "text/csv"
-    
-    return response
+    usuario = session['usuario']
+    entidad_usuario = usuario[:3]
 
-@app.route('/logout', methods=['POST'])
-def logout():
-    session.pop('usuario', None)  # Elimina la sesión del usuario
-    session.pop('user_folios', None)  # Elimina los folios del usuario
-    return redirect(url_for('index'))  # Redirige al inicio (pantalla de login)
+    entidades_permitidas = {
+        "AGS": "AGUASCALIENTES", "BAJ": "BAJA CALIFORNIA", "BJS": "BAJA CALIFORNIA SUR",
+        "CAM": "CAMPECHE", "CHS": "CHIAPAS", "CHJ": "CHIHUAHUA", "CDM": "CIUDAD DE MEXICO",
+        "COA": "COAHUILA", "COL": "COLIMA", "DUR": "DURANGO", "GUA": "GUANAJUATO",
+        "GUE": "GUERRERO", "HID": "HIDALGO", "JAL": "JALISCO", "MEX": "MEXICO",
+        "MIC": "MICHOACAN", "MOR": "MORELOS", "NAY": "NAYARIT", "NUE": "NUEVO LEON",
+        "OAX": "OAXACA", "PUE": "PUEBLA", "QUE": "QUERETARO", "QUI": "QUINTANA ROO",
+        "SLP": "SAN LUIS POTOSI", "SIN": "SINALOA", "SON": "SONORA", "TAB": "TABASCO",
+        "TLA": "TLAXCALA", "VER": "VERACRUZ", "YUC": "YUCATAN", "ZAC": "ZACATECAS"
+    }
+
+    if usuario.endswith('JL'):
+        if entidad_usuario in entidades_permitidas:
+            entidad = entidades_permitidas[entidad_usuario]
+            user_records = [r for r in sent_records if r['Entidad'] == entidad]
+        else:
+            return "Entidad no reconocida para este usuario."
+    else:
+        user_records = [r for r in sent_records if r['Folio SIILNEVA'] in session.get('user_folios', [])]
+
+    if not user_records:
+        return "No hay registros disponibles para descarga."
+
+    df = pd.DataFrame(user_records)
+    temp_filename = f"reporte_{usuario}.xlsx"
+    temp_path = os.path.join(save_path, temp_filename)
+    df.to_excel(temp_path, index=False)
+
+    return send_file(temp_path, as_attachment=True)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

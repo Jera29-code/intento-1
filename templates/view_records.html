@@ -3,115 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ver Registros</title>
+    <title>Registros Guardados</title>
+    <!-- Agregar Bootstrap para estilo de la tabla -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
     <style>
         body {
             background-color: white;
             color: purple;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            text-align: center;
+            padding: 20px;
             font-family: Arial, sans-serif;
         }
         .container {
-            width: 100%;
-            max-width: 800px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            background-color: #f9f9f9;
+            max-width: 1200px;
+            margin: 0 auto;
         }
         h1 {
-            color: purple;
-            font-size: 24px;
-            margin-bottom: 20px;
+            color: #6B4F2D;
+            font-size: 30px;
+            margin-bottom: 30px;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        th, td {
-            padding: 12px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-        th {
+        .table th {
             background-color: #6B4F2D;
             color: white;
         }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
+        .table-striped tbody tr:nth-child(odd) {
+            background-color: #f9f9f9;
         }
-        button {
+        .btn-success {
             background-color: #6B4F2D;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 10px;
+            border-color: #6B4F2D;
         }
-        button:hover {
+        .btn-success:hover {
             background-color: #4E3629;
+            border-color: #4E3629;
+        }
+        .btn-primary {
+            background-color: #6B4F2D;
+            border-color: #6B4F2D;
+        }
+        .btn-primary:hover {
+            background-color: #4E3629;
+            border-color: #4E3629;
+        }
+        .text-center {
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Registros Enviados</h1>
-        
-        {% if records %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Folio SIILNEVA</th>
-                        <th>Id Entidad</th>
-                        <th>Entidad</th>
-                        <th>Id Distrito Electoral Federal</th>
-                        <th>Cabecera D.E.F</th>
-                        <th>Número de Visita</th>
-                        <th>¿Se Recopiló SIILNEVA?</th>
-                        <th>¿Manifestó Interés en Votar?</th>
-                        <th>Causal SIILNEVA</th>
-                        <th>Fecha de Entrega</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for record in records %}
-                        <tr>
-                            <td>{{ record['Folio SIILNEVA'] }}</td>
-                            <td>{{ record['Id_Entidad'] }}</td>
-                            <td>{{ record['Entidad'] }}</td>
-                            <td>{{ record['Id_Distrito Electoral Federal'] }}</td>
-                            <td>{{ record['Cabecera D.E.F'] }}</td>
-                            <td>{{ record['Número_de_visita'] }}</td>
-                            <td>{{ record['¿Se_recopiló_SIILNEVA?'] }}</td>
-                            <td>{{ record['¿Manifestó_estar_interesado_en_votar?'] }}</td>
-                            <td>{{ record['Causal'] }}</td>
-                            <td>{{ record['Fecha de Entrega'] }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No hay registros disponibles.</p>
-        {% endif %}
-        
-        <div>
-            <form action="{{ url_for('search') }}" method="get" style="display:inline;">
-                <button type="submit">Regresar</button>
-            </form>
+        <h1 class="text-center mb-4">Registros Guardados</h1>
 
-            <form action="{{ url_for('descargar_csv') }}" method="get" style="display:inline;">
-                <button type="submit">Descargar CSV</button>
-            </form>
+        <!-- Verificar si hay registros disponibles -->
+        {% if has_records %}
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Folio SIILNEVA</th>
+                            <th>Id Entidad</th>
+                            <th>Entidad</th>
+                            <th>Id Distrito Electoral Federal</th>
+                            <th>Cabecera D.E.F</th>
+                            <th>¿Se recopiló voto?</th>
+                            <th>Número de Visita</th>
+                            <th>Fecha de Entrega</th>
+                            <th>Causal SIILNEVA</th>
+                            <th>Tipo de Elección</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for index, row in records.iterrows() %}
+                            <tr>
+                                <td>{{ row['Folio SIILNEVA'] }}</td>
+                                <td>{{ row['Id_Entidad'] }}</td>
+                                <td>{{ row['Entidad'] }}</td>
+                                <td>{{ row['Id_Distrito Electoral Federal'] }}</td>
+                                <td>{{ row['Cabecera D.E.F'] }}</td>
+                                <td>{{ row['¿Se recopiló voto?'] }}</td>
+                                <td>{{ row['Número de Visita'] }}</td>
+                                <td>{{ row['Fecha de Entrega'] }}</td>
+                                <td>{{ row['Causal_SIILNEVA'] }}</td>
+                                <td>{{ row['Tipo de Elección'] if 'Tipo de Elección' in row else 'N/A' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Botón para descargar el archivo Excel -->
+            <div class="text-center mt-3">
+                <a href="{{ url_for('download_excel') }}" class="btn btn-success">Descargar Registros en Excel</a>
+            </div>
+        {% else %}
+            <p class="text-center">No hay registros guardados.</p>
+        {% endif %}
+
+        <!-- Botón para volver a la página de búsqueda -->
+        <div class="text-center mt-4">
+            <a href="{{ url_for('search') }}" class="btn btn-primary">Volver a la búsqueda</a>
         </div>
     </div>
-</body>
-</html>
+
+    <!-- Agregar el script de Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></
+
 

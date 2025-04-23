@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buscar Folio</title>
     <style>
         body {
@@ -12,10 +13,33 @@
             align-items: center;
             min-height: 100vh;
             text-align: center;
+            font-family: Arial, sans-serif;
         }
         .container {
             width: 100%;
             max-width: 400px;
+            padding: 20px;
+            border: 2px solid purple;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #6B4F2D;
+            font-size: 26px;
+            margin-bottom: 20px;
+        }
+        label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #6B4F2D;
+        }
+        select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
         }
         .button {
             background-color: #6B4F2D;
@@ -32,30 +56,61 @@
         .logout-button:hover {
             background-color: #9D3939;
         }
+        h2 {
+            font-size: 20px;
+            color: #6B4F2D;
+            margin-top: 20px;
+        }
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin-top: 10px;
+        }
+        ul li {
+            background-color: #f2f2f2;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1 class="text-3xl font-bold mb-4">Buscar Folio</h1>
+        
+        <!-- Formulario de Búsqueda de Folio -->
         <form action="/search" method="POST">
             <label for="folio" class="block text-lg font-semibold mb-2">Folio:</label>
-            <select name="folio" required class="w-full p-2 border rounded mb-4">
+            <select name="folio" required>
                 <option value="">Selecciona un folio</option>
                 {% for folio in folios %}
-                    <option value="{{ folio }}">{{ folio }}</option>
+                    <!-- Solo mostrar los folios que no han sido procesados -->
+                    {% if folio not in processed_folios %}
+                        <option value="{{ folio }}">{{ folio }}</option>
+                    {% endif %}
                 {% endfor %}
             </select>
-            <button type="submit" class="button px-4 py-2 rounded">Buscar</button>
+            <button type="submit" class="button">Buscar</button>
         </form>
 
         {% if error %}
-            <p class="text-red-500 mt-4">{{ error }}</p>
+            <p style="color: red;">{{ error }}</p>
         {% endif %}
 
-        <!-- Botón de Cerrar Sesión -->
-        <form action="/logout" method="POST">
-            <button type="submit" class="logout-button px-4 py-2 rounded">Cerrar Sesión</button>
-        </form>
+        <!-- Mostrar los folios procesados para el usuario -->
+        <h2>Folio(s) Procesado(s):</h2>
+        {% if processed_user_folios %}
+            <ul>
+                {% for folio in processed_user_folios %}
+                    <li>{{ folio }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No se han procesado folios.</p>
+        {% endif %}
+
+        <a href="/logout" class="button logout-button">Cerrar sesión</a>
     </div>
 </body>
 </html>

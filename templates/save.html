@@ -13,17 +13,41 @@
             align-items: center;
             min-height: 100vh;
             text-align: center;
+            font-family: Arial, sans-serif;
         }
         .container {
             width: 100%;
             max-width: 400px;
+            padding: 20px;
+            border: 2px solid purple;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #6B4F2D;
+        }
+        p {
+            font-size: 16px;
+            margin: 10px 0;
         }
         .button {
+            display: inline-block;
             background-color: #6B4F2D;
             color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 20px;
         }
         .button:hover {
             background-color: #4E3629;
+        }
+        .button:active {
+            background-color: #3A2B1D;
+        }
+        .btn-container {
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -31,9 +55,14 @@
     <div class="container">
         <h1>¡Datos guardados correctamente!</h1>
         <p>El archivo ha sido actualizado y guardado para el folio: <strong>{{ folio }}</strong></p>
-        <a href="/view_records" class="button px-4 py-2 rounded">Ver Registros Enviados</a>
-        <br><br>
-        <a href="/search" class="button px-4 py-2 rounded">Volver</a>
+        
+        <div class="btn-container">
+            <a href="/view_records" class="button">Ver Registros Enviados</a>
+        </div>
+        
+        <div class="btn-container">
+            <a href="/search" class="button">Volver</a>
+        </div>
     </div>
 </body>
 </html>

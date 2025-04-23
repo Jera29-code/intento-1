@@ -36,19 +36,22 @@
         <form action="/questions/{{ folio }}" method="post">
             <input type="hidden" name="folio" value="{{ folio }}">
 
+            <!-- Pregunta: ¿Se ejerció derecho a voto? -->
             <label>¿Se ejerció derecho a voto?</label>
             <select name="siilneva" onchange="toggleSIILNEVA()" required>
                 <option value="Si">Sí</option>
                 <option value="No">No</option>
             </select><br><br>
 
+            <!-- Pregunta: Número de Visita -->
             <label for="numero_visita">Número de Visita:</label>
             <select name="numero_visita" required>
                 <option value="Primera visita">Primera visita</option>
                 <option value="Segunda visita">Segunda visita</option>
                 <option value="Tercera visita">Tercera visita</option>
-                 </select><br><br>
+            </select><br><br>
 
+            <!-- Pregunta: Causal (si "No" se ejerció derecho a voto) -->
             <div id="causalDiv" style="display:none;">
                 <label>Causal:</label>
                 <select name="causal_siilneva">
@@ -62,28 +65,43 @@
                 </select><br><br>
             </div>
 
+            <!-- Pregunta: Fecha de Entrega -->
             <label for="fecha_entrega">Fecha de Entrega:</label>
-            <input type="date" name="fecha_entrega" min="2025-05-14" max="2025-05-21" required><br><br>
+            <input type="date" name="fecha_entrega" min="2025-05-12" max="2025-05-21" required><br><br>
 
+            <!-- Pregunta: Tipo de Elección (siempre visible) -->
+            <div id="tipoEleccionDiv">
+                <label for="tipo_eleccion">Tipo de elección:</label>
+                <select name="tipo_eleccion" required>
+                    <option value="LOCAL">LOCAL</option>
+                    <option value="FEDERAL">FEDERAL</option>
+                    <option value="AMBAS ELECCIONES">AMBAS ELECCIONES</option>
+                </select><br><br>
+            </div>
+
+            <!-- Botón de envío -->
             <button type="submit" class="button px-4 py-2 rounded">Guardar</button>
         </form>
     </div>
+
     <script>
+        // Función para mostrar u ocultar campos dependiendo de la respuesta a "¿Se ejerció derecho a voto?"
         function toggleSIILNEVA() {
-            var recopilado = document.querySelector('select[name="siilneva"]').value;
+            var siilneva = document.querySelector('select[name="siilneva"]').value;
             var causalDiv = document.getElementById("causalDiv");
 
-            if (recopilado === "No") {
+            // Si "No", mostrar causal
+            if (siilneva === "No") {
                 causalDiv.style.display = "block";
             } else {
                 causalDiv.style.display = "none";
             }
         }
 
+        // Inicializar el formulario cuando se carga la página
         window.onload = function() {
             toggleSIILNEVA();
         }
     </script>
 </body>
 </html>
-
