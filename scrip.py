@@ -5,6 +5,10 @@ from datetime import datetime
 import requests
 from io import BytesIO
 import dropbox  # <-- Nuevo import
+from dotenv import load_dotenv  # <-- Nuevo import
+
+# Cargar las variables de entorno desde el archivo .env
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -36,7 +40,8 @@ users_data = download_users_from_dropbox()
 data = download_data_from_dropbox()
 sent_records = []
 
-save_path = r"C:\Users\jeraldi.rosas\OneDrive - Instituto Nacional Electoral\Escritorio\ruta nacional"
+# Eliminamos la ruta local
+save_path = None
 
 def load_processed_folios():
     try:
@@ -54,10 +59,11 @@ processed_folios = load_processed_folios()
 
 def load_saved_records():
     try:
-        file_path = os.path.join(save_path, 'registros_guardados.xlsx')
-        if os.path.exists(file_path):
-            df = pd.read_excel(file_path, engine='openpyxl')
-            return df.to_dict(orient='records')
+        if save_path is not None:
+            file_path = os.path.join(save_path, 'registros_guardados.xlsx')
+            if os.path.exists(file_path):
+                df = pd.read_excel(file_path, engine='openpyxl')
+                return df.to_dict(orient='records')
         return []
     except Exception as e:
         print(f"Error al cargar los registros guardados: {e}")
@@ -170,7 +176,7 @@ def questions(folio):
                 record['Tipo de Elección'] = tipo_eleccion
 
             sent_records.append(record)
-            save_to_excel()
+            save_to_dropbox()  # Guardar directamente en Dropbox
             save_processed_folios(processed_folios)
 
             return render_template('save.html', folio=folio)
@@ -179,20 +185,21 @@ def questions(folio):
 
     return render_template('questions.html', result=result)
 
-def save_to_excel():
+def save_to_dropbox():
     df = pd.DataFrame(sent_records)
-    file_path = os.path.join(save_path, 'registros_guardados.xlsx')
-    df.to_excel(file_path, index=False)
+    
+    # Usamos BytesIO para guardar en memoria
+    with BytesIO() as byte_file:
+        df.to_excel(byte_file, index=False)
+        byte_file.seek(0)  # Volver al inicio del archivo para leerlo
 
-    # Subir a Dropbox
-    try:
-        access_token = "sl.u.AFrE8rrMf56wIkEQd0wvg91mDmZmmbenJHbzwPMSrOJW-9_th3c2u4QXkGDb1wmqeG24Z7SeJYCTpvwfJEOp0mjPCwLj0D8C7-zqNUsK0IcVgvkpu2lVFCJvJiE36rOwIL0_vy0yTmGa8T-h3s3Rvaoc0qJZoFzNlqp8CfcCYviSbogZYNVduj8ExzycsyOki3OU0fmMyXjp6ZHLse37XbQ-x1LT2dpPCJpXiHMdfPjlK5jzlh-NxzHuCCckvT4xAS0zMhSy3PnvImQBF4IuDo_rCFpX_LrZrD7X2PutbLTHAd3_JQ3-RrqUFCRwVda-BMYK91l9VRttt4vdzMgZFRDm6vMV9Z-CUspcheMTO8agvMXHRjDYK7uEnvCGVSjL6iXaZgr4198mgZq51I4Fsm9GFf1VAFUfcL1g4fdJzFIpeMaNk7sjPL32dT2nazmB9xNSmNpbIRF1B6u8aaczVkQ5Rl9UFAK7GDqAzhZEMVYl3845GLxoERAE0LlpHplfhlAESP7wdp_Jqokyloi-ICLwGGEW0m-BOfb8BllrzW3YanYXquKW62neUMhz_sZBUmu7BQd3N0GCIj5tlqiVvuiA3boDapMOo2TN8OCaeBthsycE_Pb2wcElUBJB_AwcyYfmMKDPGHnIQpQTG-j5k2hgre99tKPzQxK87Whl2hfu3HZpfLSaIkOG327wVb8gh_Hs-I52oI0TZ6iGY8UAvVWmbPhO2KZRGiF68EsjR7WjY-wgRuKZgM1YaIeEgePDr6fPbpeQZgklGlmuvKGJQr6gwhnwP24E4kobPZ-l1zZsfaPo3HISciKGn_UToTZuFhtYX9P4ZsrcXEF610Jixg64BHs6lDKKivtRGA8UQdidVe4WkfN9qo5r9RnrGDCJLS6jrLoOmV69suduV03wlyhihRzm0V4_6ohynFhp9_WabPx9DRU6MsaHRe6wGWuYZDsIfgiRz25F-Tm3sxXo6EZ1l8IkL5H1IUon2EtKurUZU-ImgZquzmnuiV2UYNQgaleRm1Nn-Mw8jBEfbYzVTXjJ1oMs_tYmHjtWwfGEENS1w1SeyNJy6RlK4zDPxU0r6WLyNC5TLImKdWHMYZGPSgnl3SxmTAklrfdzRyXjhq0yCKzLAKbeqlF4iJ5dK0uAvd_eNKAU7zUk-o9fHZWUuNeRaXTMCxY7bocDYhk2cp37-Xa3UjzbtQdnLsMrke7cSsnVOpHn4T7Eas3FPEyMzzku8DL-sEzajvxhkmSJZY47A-ZaJgG0QPvPqC9kp0qx5CMcwTFbBX07sDxTnhwdMZD6"  # <-- Reemplaza con tu token de Dropbox
-        dbx = dropbox.Dropbox(access_token)
-        with open(file_path, 'rb') as f:
-            dbx.files_upload(f.read(), '/registros_guardados.xlsx', mode=dropbox.files.WriteMode.overwrite)
-        print("Archivo subido a Dropbox exitosamente.")
-    except Exception as e:
-        print(f"Error al subir a Dropbox: {e}")
+        try:
+            access_token = os.getenv("sl.u.AFrE8rrMf56wIkEQd0wvg91mDmZmmbenJHbzwPMSrOJW-9_th3c2u4QXkGDb1wmqeG24Z7SeJYCTpvwfJEOp0mjPCwLj0D8C7-zqNUsK0IcVgvkpu2lVFCJvJiE36rOwIL0_vy0yTmGa8T-h3s3Rvaoc0qJZoFzNlqp8CfcCYviSbogZYNVduj8ExzycsyOki3OU0fmMyXjp6ZHLse37XbQ-x1LT2dpPCJpXiHMdfPjlK5jzlh-NxzHuCCckvT4xAS0zMhSy3PnvImQBF4IuDo_rCFpX_LrZrD7X2PutbLTHAd3_JQ3-RrqUFCRwVda-BMYK91l9VRttt4vdzMgZFRDm6vMV9Z-CUspcheMTO8agvMXHRjDYK7uEnvCGVSjL6iXaZgr4198mgZq51I4Fsm9GFf1VAFUfcL1g4fdJzFIpeMaNk7sjPL32dT2nazmB9xNSmNpbIRF1B6u8aaczVkQ5Rl9UFAK7GDqAzhZEMVYl3845GLxoERAE0LlpHplfhlAESP7wdp_Jqokyloi-ICLwGGEW0m-BOfb8BllrzW3YanYXquKW62neUMhz_sZBUmu7BQd3N0GCIj5tlqiVvuiA3boDapMOo2TN8OCaeBthsycE_Pb2wcElUBJB_AwcyYfmMKDPGHnIQpQTG-j5k2hgre99tKPzQxK87Whl2hfu3HZpfLSaIkOG327wVb8gh_Hs-I52oI0TZ6iGY8UAvVWmbPhO2KZRGiF68EsjR7WjY-wgRuKZgM1YaIeEgePDr6fPbpeQZgklGlmuvKGJQr6gwhnwP24E4kobPZ-l1zZsfaPo3HISciKGn_UToTZuFhtYX9P4ZsrcXEF610Jixg64BHs6lDKKivtRGA8UQdidVe4WkfN9qo5r9RnrGDCJLS6jrLoOmV69suduV03wlyhihRzm0V4_6ohynFhp9_WabPx9DRU6MsaHRe6wGWuYZDsIfgiRz25F-Tm3sxXo6EZ1l8IkL5H1IUon2EtKurUZU-ImgZquzmnuiV2UYNQgaleRm1Nn-Mw8jBEfbYzVTXjJ1oMs_tYmHjtWwfGEENS1w1SeyNJy6RlK4zDPxU0r6WLyNC5TLImKdWHMYZGPSgnl3SxmTAklrfdzRyXjhq0yCKzLAKbeqlF4iJ5dK0uAvd_eNKAU7zUk-o9fHZWUuNeRaXTMCxY7bocDYhk2cp37-Xa3UjzbtQdnLsMrke7cSsnVOpHn4T7Eas3FPEyMzzku8DL-sEzajvxhkmSJZY47A-ZaJgG0QPvPqC9kp0qx5CMcwTFbBX07sDxTnhwdMZD6")  # Cargar token desde la variable de entorno
+            dbx = dropbox.Dropbox(access_token)
+            dbx.files_upload(byte_file.read(), '/registros_guardados.xlsx', mode=dropbox.files.WriteMode.overwrite)
+            print("Archivo subido directamente a Dropbox exitosamente.")
+        except Exception as e:
+            print(f"Error al subir a Dropbox: {e}")
 
 @app.route('/logout')
 def logout():
@@ -230,26 +237,10 @@ def download_excel():
         "SLP": "SAN LUIS POTOSI", "SIN": "SINALOA", "SON": "SONORA", "TAB": "TABASCO",
         "TLA": "TLAXCALA", "VER": "VERACRUZ", "YUC": "YUCATAN", "ZAC": "ZACATECAS"
     }
-
-    if usuario.endswith('JL'):
-        if entidad_usuario in entidades_permitidas:
-            entidad = entidades_permitidas[entidad_usuario]
-            user_records = [r for r in sent_records if r['Entidad'] == entidad]
-        else:
-            return "Entidad no reconocida para este usuario."
-    else:
-        user_records = [r for r in sent_records if r['Folio SIILNEVA'] in session.get('user_folios', [])]
-
-    if not user_records:
-        return "No hay registros disponibles para descarga."
-
-    df = pd.DataFrame(user_records)
-    temp_filename = f"reporte_{usuario}.xlsx"
-    temp_path = os.path.join(save_path, temp_filename)
-    df.to_excel(temp_path, index=False)
-
-    return send_file(temp_path, as_attachment=True)
+    
+    # Puedes agregar más lógica de validación según las reglas específicas.
+    
+    return render_template('download_excel.html', entidad_usuario=entidades_permitidas.get(entidad_usuario))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
-
+    app.run(debug=True)
