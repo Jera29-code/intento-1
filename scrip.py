@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 import requests
 from io import BytesIO
+import dropbox  # <-- Nuevo import
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -66,7 +67,7 @@ sent_records = load_saved_records()
 
 usuarios_pel = [
     "DUR1", "DUR2", "DUR3", "DUR4", 
-       "VER1", "VER2", "VER3", "VER4", "VER5", "VER6", "VER7", "VER8", "VER9", "VER10", "VER11", "VER12", 
+    "VER1", "VER2", "VER3", "VER4", "VER5", "VER6", "VER7", "VER8", "VER9", "VER10", "VER11", "VER12", 
     "VER13", "VER14", "VER15", "VER16", "VER17", "VER18", "VER19"
 ]
 
@@ -183,6 +184,16 @@ def save_to_excel():
     file_path = os.path.join(save_path, 'registros_guardados.xlsx')
     df.to_excel(file_path, index=False)
 
+    # Subir a Dropbox
+    try:
+        access_token = "sl.u.AFrE8rrMf56wIkEQd0wvg91mDmZmmbenJHbzwPMSrOJW-9_th3c2u4QXkGDb1wmqeG24Z7SeJYCTpvwfJEOp0mjPCwLj0D8C7-zqNUsK0IcVgvkpu2lVFCJvJiE36rOwIL0_vy0yTmGa8T-h3s3Rvaoc0qJZoFzNlqp8CfcCYviSbogZYNVduj8ExzycsyOki3OU0fmMyXjp6ZHLse37XbQ-x1LT2dpPCJpXiHMdfPjlK5jzlh-NxzHuCCckvT4xAS0zMhSy3PnvImQBF4IuDo_rCFpX_LrZrD7X2PutbLTHAd3_JQ3-RrqUFCRwVda-BMYK91l9VRttt4vdzMgZFRDm6vMV9Z-CUspcheMTO8agvMXHRjDYK7uEnvCGVSjL6iXaZgr4198mgZq51I4Fsm9GFf1VAFUfcL1g4fdJzFIpeMaNk7sjPL32dT2nazmB9xNSmNpbIRF1B6u8aaczVkQ5Rl9UFAK7GDqAzhZEMVYl3845GLxoERAE0LlpHplfhlAESP7wdp_Jqokyloi-ICLwGGEW0m-BOfb8BllrzW3YanYXquKW62neUMhz_sZBUmu7BQd3N0GCIj5tlqiVvuiA3boDapMOo2TN8OCaeBthsycE_Pb2wcElUBJB_AwcyYfmMKDPGHnIQpQTG-j5k2hgre99tKPzQxK87Whl2hfu3HZpfLSaIkOG327wVb8gh_Hs-I52oI0TZ6iGY8UAvVWmbPhO2KZRGiF68EsjR7WjY-wgRuKZgM1YaIeEgePDr6fPbpeQZgklGlmuvKGJQr6gwhnwP24E4kobPZ-l1zZsfaPo3HISciKGn_UToTZuFhtYX9P4ZsrcXEF610Jixg64BHs6lDKKivtRGA8UQdidVe4WkfN9qo5r9RnrGDCJLS6jrLoOmV69suduV03wlyhihRzm0V4_6ohynFhp9_WabPx9DRU6MsaHRe6wGWuYZDsIfgiRz25F-Tm3sxXo6EZ1l8IkL5H1IUon2EtKurUZU-ImgZquzmnuiV2UYNQgaleRm1Nn-Mw8jBEfbYzVTXjJ1oMs_tYmHjtWwfGEENS1w1SeyNJy6RlK4zDPxU0r6WLyNC5TLImKdWHMYZGPSgnl3SxmTAklrfdzRyXjhq0yCKzLAKbeqlF4iJ5dK0uAvd_eNKAU7zUk-o9fHZWUuNeRaXTMCxY7bocDYhk2cp37-Xa3UjzbtQdnLsMrke7cSsnVOpHn4T7Eas3FPEyMzzku8DL-sEzajvxhkmSJZY47A-ZaJgG0QPvPqC9kp0qx5CMcwTFbBX07sDxTnhwdMZD6"  # <-- Reemplaza con tu token de Dropbox
+        dbx = dropbox.Dropbox(access_token)
+        with open(file_path, 'rb') as f:
+            dbx.files_upload(f.read(), '/registros_guardados.xlsx', mode=dropbox.files.WriteMode.overwrite)
+        print("Archivo subido a Dropbox exitosamente.")
+    except Exception as e:
+        print(f"Error al subir a Dropbox: {e}")
+
 @app.route('/logout')
 def logout():
     session.pop('usuario', None)
@@ -241,3 +252,4 @@ def download_excel():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
